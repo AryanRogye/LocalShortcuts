@@ -42,26 +42,33 @@ extension LocalShortcuts {
         case semi_colon = ":"
         case period = "."
         case comma  = ","
+        case backtick = "`"
         
         case dollar = "$"
         case underscore = "_"
-        
+        case backslash = "\\"
+        case slash = "/"
+
         // Common specials
         case space
         case escape
-        case returnOrEnter
+        case returnOrEnter = "return"
         case tab
         case delete // backspace
         
-        case equal
-        case plus
-        case minus
+        case equal = "="
+        case plus = "+"
+        case minus = "-"
         
         case leftArrow
         case rightArrow
         case upArrow
         case downArrow
-        
+        case leftBracket = "["
+        case rightBracket = "]"
+        case leftBrace = "{"
+        case rightBrace = "}"
+
         public static func activeKeys(event: NSEvent) -> [Key] {
             // Attempt to create a Key from the event; if successful, wrap it in an array.
             if let key = Key(from: event) {
@@ -122,7 +129,14 @@ extension LocalShortcuts.Key {
             case ">": key = .period
             case ",": key = .comma
             case "<": key = .comma
-                
+            case "`": key = .backtick
+            case "[": key = .leftBracket
+            case "{": key = .leftBrace
+            case "]": key = .rightBracket
+            case "}": key = .rightBrace
+            case "\\": key = .backslash
+            case "/": key = .slash
+
             case "0": key = .zero
             case "1": key = .one
             case "2": key = .two
@@ -154,6 +168,7 @@ extension LocalShortcuts.Key {
         
         // Fallback to keyCode for non-character keys
         switch event.keyCode {
+        case 27: self = .minus
         case 53: self = .escape
         case 51: self = .delete
         case 36: self = .returnOrEnter
