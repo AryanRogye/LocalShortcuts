@@ -1,3 +1,4 @@
+#if os(macOS)
 import AppKit
 
 public enum LocalShortcuts {
@@ -100,3 +101,4 @@ public enum LocalShortcuts {
         }
     }
 }
+#endif

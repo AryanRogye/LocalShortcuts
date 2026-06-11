@@ -5,6 +5,7 @@
 //  Created by Aryan Rogye on 12/4/25.
 //
 
+#if os(macOS)
 import AppKit
 import SwiftUI
 import Carbon.HIToolbox
@@ -13,7 +14,7 @@ extension LocalShortcuts {
     public struct LocalShortcutsRecorder: NSViewRepresentable {
         
         let name : Name
-
+        
         public init(for name: Name) {
             self.name = name
         }
@@ -190,4 +191,6 @@ extension LocalShortcuts {
             stringValue = shortcut.displayValue()
             window?.makeFirstResponder(nil)
         }
-    }}
+    }
+}
+#endif

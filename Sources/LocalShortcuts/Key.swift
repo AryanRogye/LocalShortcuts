@@ -5,6 +5,7 @@
 //  Created by Aryan Rogye on 12/4/25.
 //
 
+#if os(macOS)
 import AppKit
 
 extension LocalShortcuts {
@@ -190,3 +191,4 @@ extension LocalShortcuts.Key {
         return LocalShortcuts.Key(from: event) == self
     }
 }
+#endif

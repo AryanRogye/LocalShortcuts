@@ -5,6 +5,7 @@
 //  Created by Aryan Rogye on 12/4/25.
 //
 
+#if os(macOS)
 import AppKit
 
 extension LocalShortcuts {
@@ -61,3 +62,4 @@ public extension Set where Element == LocalShortcuts.Modifier {
         return eventFlags == neededFlags
     }
 }
+#endif
