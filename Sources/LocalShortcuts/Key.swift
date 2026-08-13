@@ -19,9 +19,20 @@ extension LocalShortcuts {
              e, E,
              f, F,
              g, G,
-             h, i, j, k, l, m,
-             n, o, p, q, r, s, t, u,
-             
+             h, H,
+             i, I,
+             j, J,
+             k, K,
+             l, L,
+             m, M,
+             n, N,
+             o, O,
+             p, P,
+             q, Q,
+             r, R,
+             s, S,
+             t, T,
+             u, U,
              v, V,
              w, W,
              x, X,
@@ -137,7 +148,7 @@ extension LocalShortcuts.Key {
             case "}": key = .rightBrace
             case "\\": key = .backslash
             case "/": key = .slash
-
+                
             case "0": key = .zero
             case "1": key = .one
             case "2": key = .two
@@ -189,6 +200,70 @@ extension LocalShortcuts.Key {
     
     func matches(event: NSEvent) -> Bool {
         return LocalShortcuts.Key(from: event) == self
+    }
+    
+    public var capital: Self? {
+        switch self {
+        case .a, .A: return .A
+        case .b, .B: return .B
+        case .c, .C: return .C
+        case .d, .D: return .D
+        case .e, .E: return .E
+        case .f, .F: return .F
+        case .g, .G: return .G
+        case .h, .H: return .H
+        case .i, .I: return .I
+        case .j, .J: return .J
+        case .k, .K: return .K
+        case .l, .L: return .L
+        case .m, .M: return .M
+        case .n, .N: return .N
+        case .o, .O: return .O
+        case .p, .P: return .P
+        case .q, .Q: return .Q
+        case .r, .R: return .R
+        case .s, .S: return .S
+        case .t, .T: return .T
+        case .u, .U: return .U
+        case .v, .V: return .V
+        case .w, .W: return .W
+        case .x, .X: return .X
+        case .y, .Y: return .Y
+        case .z, .Z: return .Z
+        default: return nil
+        }
+    }
+    
+    public var lowerCase: Self? {
+        switch self {
+        case .a, .A: return .a
+        case .b, .B: return .b
+        case .c, .C: return .c
+        case .d, .D: return .d
+        case .e, .E: return .e
+        case .f, .F: return .f
+        case .g, .G: return .g
+        case .h, .H: return .h
+        case .i, .I: return .i
+        case .j, .J: return .j
+        case .k, .K: return .k
+        case .l, .L: return .l
+        case .m, .M: return .m
+        case .n, .N: return .n
+        case .o, .O: return .o
+        case .p, .P: return .p
+        case .q, .Q: return .q
+        case .r, .R: return .r
+        case .s, .S: return .s
+        case .t, .T: return .t
+        case .u, .U: return .u
+        case .v, .V: return .v
+        case .w, .W: return .w
+        case .x, .X: return .x
+        case .y, .Y: return .y
+        case .z, .Z: return .z
+        default: return nil
+        }
     }
 }
 #endif

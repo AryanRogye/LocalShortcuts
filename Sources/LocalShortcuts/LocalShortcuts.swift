@@ -52,12 +52,40 @@ public enum LocalShortcuts {
     }
     
     public struct Shortcut: Codable, Hashable {
-        let modifier: [Modifier]
-        let keys: [Key]
+        public var modifier: [Modifier]
+        public var keys: [Key]
         
         public init(modifier: [Modifier], keys: [Key]) {
             self.modifier = modifier
             self.keys = keys
+        }
+        
+        @MainActor public func keysContains(_ keysToCheck: Key...) -> Bool {
+            for key in keysToCheck {
+                if keys.contains(key) {
+                    continue
+                }
+                return false
+            }
+            return true
+        }
+        
+        @MainActor public func capitalKeys() -> Self? {
+            let mappedKeys = keys.map { $0.capital }
+            if mappedKeys.contains(where: { $0 == nil }) {
+                return nil
+            }
+            let unwrappedKeys = mappedKeys.compactMap { $0 }
+            return .init(modifier: modifier, keys: unwrappedKeys)
+        }
+        
+        @MainActor public func lowerCaseKeys() -> Self? {
+            let mappedKeys = keys.map { $0.lowerCase }
+            if mappedKeys.contains(where: { $0 == nil }) {
+                return nil
+            }
+            let unwrappedKeys = mappedKeys.compactMap { $0 }
+            return .init(modifier: modifier, keys: unwrappedKeys)
         }
         
         /// Convenience to build a shortcut from an event. Returns `nil` if no key could be parsed.
@@ -98,6 +126,35 @@ public enum LocalShortcuts {
             [modifiers(), keyValues()]
                 .filter { !$0.isEmpty }
                 .joined(separator: " ")
+        }
+    }
+}
+
+public extension Set where Element == LocalShortcuts.Shortcut {
+    func contains(_ modifier: LocalShortcuts.Modifier) -> Bool {
+        contains { $0.modifier.contains(modifier) }
+    }
+    func contains(_ key: LocalShortcuts.Key) -> Bool {
+        contains { $0.keys.contains(key) }
+    }
+    func keysContains(_ keysToCheck: LocalShortcuts.Key...) -> Bool {
+        allSatisfy { shortcut in
+            shortcut.keys.contains { keysToCheck.contains($0) }
+        }
+    }
+}
+
+
+public extension Array where Element == LocalShortcuts.Shortcut {
+    func contains(_ modifier: LocalShortcuts.Modifier) -> Bool {
+        contains { $0.modifier.contains(modifier) }
+    }
+    func contains(_ key: LocalShortcuts.Key) -> Bool {
+        contains { $0.keys.contains(key) }
+    }
+    func keysContains(_ keysToCheck: LocalShortcuts.Key...) -> Bool {
+        allSatisfy { shortcut in
+            shortcut.keys.contains { keysToCheck.contains($0) }
         }
     }
 }
