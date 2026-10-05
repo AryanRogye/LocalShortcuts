@@ -13,7 +13,8 @@ public enum LocalShortcuts {
         
         @MainActor internal static var shortcuts: [Name: Shortcut] = [:]
         @MainActor internal static var handlers:  [Name: Handler] = [:]
-        
+        @MainActor internal static var consumesEvents: [Name: Bool] = [:]
+
         /// Registers with null
         @MainActor public init(_ rawValue: String, _ shortcut: Shortcut) {
             self.rawValue = rawValue
@@ -23,9 +24,11 @@ public enum LocalShortcuts {
         
         @MainActor public static func onKeyDown(
             for name: Name,
+            consumesEvent: Bool = false,
             completion: @escaping Handler
         ) {
             handlers[name] = completion
+            consumesEvents[name] = consumesEvent
             startMonitorIfNeeded()
         }
         
@@ -33,21 +36,26 @@ public enum LocalShortcuts {
             guard Name.monitor == nil else { return }
             
             Name.monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-                handle(event: event)
-                return event
+                handle(event: event) ? nil : event
             }
         }
         
-        @MainActor private static func handle(event: NSEvent) {
-            guard let eventShortcut = Shortcut.from(event: event) else { return }
-            
-            // find the first name whose bound shortcut matches this event
-            guard let (name, _) = shortcuts.first(where: { $0.value == eventShortcut }),
-                  let handler = handlers[name] else {
-                return
+        @MainActor
+        private static func handle(event: NSEvent) -> Bool {
+            guard let eventShortcut = Shortcut.from(event: event) else {
+                return false
             }
-            
+
+            guard let (name, _) = shortcuts.first(where: {
+                $0.value == eventShortcut
+            }),
+                  let handler = handlers[name] else {
+                return false
+            }
+
             handler()
+
+            return consumesEvents[name] ?? false
         }
     }
     
