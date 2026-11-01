@@ -13,7 +13,13 @@ public enum LocalShortcuts {
         
         @MainActor internal static var shortcuts: [Name: Shortcut] = [:]
         @MainActor internal static var handlers:  [Name: Handler] = [:]
+        @MainActor internal static var keyUpHandlers: [Name: Handler] = [:]
         @MainActor internal static var consumesEvents: [Name: Bool] = [:]
+        @MainActor internal static var allowsRepeat: [Name: Bool] = [:]
+        @MainActor private static var pressedKeys: [UInt16: (lastEventTime: TimeInterval, modifiers: NSEvent.ModifierFlags)] = [:]
+        @MainActor private static var activeKeyUps: [UInt16: Name] = [:]
+        @MainActor private static var activeModifierShortcuts: Set<Name> = []
+        @MainActor private static var deactivateObserver: NSObjectProtocol?
 
         /// Registers with null
         @MainActor public init(_ rawValue: String, _ shortcut: Shortcut) {
@@ -25,35 +31,103 @@ public enum LocalShortcuts {
         @MainActor public static func onKeyDown(
             for name: Name,
             consumesEvent: Bool = false,
+            allowsRepeat: Bool = true,
             completion: @escaping Handler
         ) {
             handlers[name] = completion
             consumesEvents[name] = consumesEvent
+            Self.allowsRepeat[name] = allowsRepeat
+            startMonitorIfNeeded()
+        }
+
+        /// Called once when a shortcut ends after a matching key down.
+        /// For shortcuts with modifiers, this happens when a required modifier is released.
+        /// For shortcuts without modifiers, this happens when the main key is released.
+        @MainActor public static func onKeyUp(for name: Name, completion: @escaping Handler) {
+            keyUpHandlers[name] = completion
             startMonitorIfNeeded()
         }
         
         @MainActor private static func startMonitorIfNeeded() {
             guard Name.monitor == nil else { return }
             
-            Name.monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            Name.monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { event in
                 handle(event: event) ? nil : event
+            }
+
+            deactivateObserver = NotificationCenter.default.addObserver(
+                forName: NSApplication.didResignActiveNotification,
+                object: nil,
+                queue: .main
+            ) { _ in
+                Task { @MainActor in
+                    pressedKeys.removeAll()
+                    activeKeyUps.removeAll()
+                    activeModifierShortcuts.removeAll()
+                }
             }
         }
         
         @MainActor
-        private static func handle(event: NSEvent) -> Bool {
+        internal static func handle(event: NSEvent) -> Bool {
+            if event.type == .keyUp {
+                pressedKeys[event.keyCode] = nil
+                if let name = activeKeyUps.removeValue(forKey: event.keyCode) {
+                    keyUpHandlers[name]?()
+                }
+                return false
+            }
+            if event.type == .flagsChanged {
+                pressedKeys = pressedKeys.filter { _, pressed in
+                    event.modifierFlags.contains(pressed.modifiers)
+                }
+                let released = activeModifierShortcuts.filter { name in
+                    shortcuts[name]?.modifier.contains { modifier in
+                        !event.modifierFlags.contains(modifier.flag)
+                    } ?? true
+                }
+                for name in released {
+                    activeModifierShortcuts.remove(name)
+                    keyUpHandlers[name]?()
+                }
+                return false
+            }
+            guard event.type == .keyDown else { return false }
+
             guard let eventShortcut = Shortcut.from(event: event) else {
                 return false
             }
 
-            guard let (name, _) = shortcuts.first(where: {
+            guard let (name, shortcut) = shortcuts.first(where: {
                 $0.value == eventShortcut
-            }),
-                  let handler = handlers[name] else {
+            }), handlers[name] != nil || keyUpHandlers[name] != nil else {
                 return false
             }
 
-            handler()
+            if keyUpHandlers[name] != nil {
+                if shortcut.modifier.isEmpty {
+                    activeKeyUps[event.keyCode] = name
+                } else {
+                    activeModifierShortcuts.insert(name)
+                }
+            }
+
+            if allowsRepeat[name] == false {
+                // WebKit can leave us without a matching key-up. Releasing a
+                // modifier or a pause in key-down events also ends the press.
+                let previous = pressedKeys[event.keyCode]
+                let modifiers = event.modifierFlags.intersection([
+                    .command, .shift, .option, .control, .capsLock
+                ])
+                pressedKeys[event.keyCode] = (event.timestamp, modifiers)
+                let isNewPress = previous.map { event.timestamp - $0.lastEventTime >= 1 } ?? true
+                guard !event.isARepeat,
+                      isNewPress else {
+                    return false
+                }
+            }
+
+            handlers[name]?()
 
             return consumesEvents[name] ?? false
         }

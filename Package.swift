@@ -21,6 +21,10 @@ let package = Package(
         .target(
             name: "LocalShortcuts"
         ),
+        .testTarget(
+            name: "LocalShortcutsTests",
+            dependencies: ["LocalShortcuts"]
+        ),
 
     ]
 )
